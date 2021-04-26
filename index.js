@@ -319,11 +319,12 @@ const viewEmpDep = () => {
 }
 
 const viewEmpMgr = () => {
-    const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name, COALESCE(CONCAT(manager.first_name, ' ', manager.last_name), 'None')  AS Manager_Name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id ORDER BY employee.id;"
+    const query = "SELECT * FROM employee WHERE manager_id IS NULL"
     connection.query(query, (err, data) => {
         if (err) throw err
         const mgrChoices = data.map(mgr => {
-            return {name: mgr.Manager_Name}
+            return {name: `${mgr.first_name} ${mgr.last_name}`,
+            value: mgr.id}
         })
         inquirer
         .prompt([
@@ -335,7 +336,7 @@ const viewEmpMgr = () => {
             }
         ])
         .then(answer => {
-            const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name, COALESCE(CONCAT(manager.first_name, ' ', manager.last_name), 'None')  AS Manager_Name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id WHERE Manager_Name = ? ORDER BY employee.id;"
+            const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name, COALESCE(CONCAT(manager.first_name, ' ', manager.last_name), 'None')  AS Manager_Name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id WHERE employee.manager_id = ? ORDER BY employee.id;"
             connection.query(query, answer.mgrSelect, (err, data) =>{
                 if (err) throw err
                 console.table(data)
@@ -479,6 +480,35 @@ const deleteDept = () => {
                 })
 
             }
+        })
+    })
+}
+
+const viewBudget = () => {
+    connection.query("SELECT * FROM department", (err, data)=> {
+        if(err) throw err
+        const depChoices = data.map(dep => {
+            return {name: dep.department_name,
+            value: dep.id}
+        })
+        inquirer
+        .prompt([
+            {
+                name: "deptSelect",
+                type: "list",
+                message: "Which department would you like to view?",
+                choices: depChoices
+            }
+        ])
+        .then(answer=> {
+            const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name, COALESCE(CONCAT(manager.first_name, ' ', manager.last_name), 'None')  AS Manager_Name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id WHERE department_id = ? ORDER BY employee.id;"
+            connection.query(query, answer.deptSelect, (err, data) => {
+                if (err) throw err
+                let totalSalary = data.map(sal => sal.salary)
+                totalSalary = totalSalary.reduce((a, b) => a + b, 0)
+                console.log(`Total employee budget | $${totalSalary}`)
+                startTracker()
+            })
         })
     })
 }
