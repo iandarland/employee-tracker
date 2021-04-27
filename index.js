@@ -318,6 +318,33 @@ const viewEmpDep = () => {
     })
 }
 
+const viewEmpRole = () => {
+    connection.query("SELECT * FROM ROLE", (err, data) => {
+        if (err) throw err
+        const roleChoices = data.map(role => {
+            return {name: role.title,
+            value: role.id}
+        })
+        inquirer
+        .prompt([
+            {
+                name: "roleSelect",
+                type: "list",
+                message: "Which role would you like to view?",
+                choices: roleChoices
+            }
+        ])
+        .then(answer => {
+            const query = "SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name, COALESCE(CONCAT(manager.first_name, ' ', manager.last_name), 'None')  AS Manager_Name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON manager.id = employee.manager_id WHERE employee.role_id = ? ORDER BY employee.id;"
+            connection.query(query, answer.roleSelect, (err, data) =>{
+                if (err) throw err
+                console.table(data)
+                startTracker()
+            })
+        })
+    })
+}
+
 const viewEmpMgr = () => {
     const query = "SELECT * FROM employee WHERE manager_id IS NULL"
     connection.query(query, (err, data) => {
@@ -353,7 +380,7 @@ const deleteEmployees = () =>{
             name: "methodSelect",
             type: "list",
             message: "How would you like to delete employees?",
-            choices: ["Individual Employee", "By Role", "By Department", "Return"]
+            choices: ["Individual Employee", "By Role", "Return"]
         }
     ])
     .then(answer => {
@@ -364,9 +391,9 @@ const deleteEmployees = () =>{
             case "By Role":
                 deleteRole()
                 break;
-            case "By Department":
-                deleteDept()
-                break;
+            // case "By Department":
+            //     deleteDept()
+            //     break;
             case "Return":
                 startTracker()
                 break;
