@@ -20,11 +20,3 @@ VALUES ("Art", "Vandalay", 1, NULL),
 ("H.E", "Pennypacker", 4, NULL),
 ("Kal", "Varnsen", 3, 1);
 
-
- SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.department_name
-    from employee
-    inner join role 
-    on employee.role_id = role.id
-    inner join department 
-    on role.department_id = department.id
-    order by employee.id
